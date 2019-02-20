@@ -1,0 +1,41 @@
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: 'Lato', sans-serif;
+    background-image: url("images/favicon_black.png");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: contain;
+}
+
+#videos-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+    z-index: -100;
+}
+
+#videos-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.button {
+    border: 0;
+    background-color: #fff;
+    color: #000;
+    text-transform: uppercase;
+    font-size: 20px;
+    padding: 10px;
+}
