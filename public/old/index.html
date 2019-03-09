@@ -6,55 +6,72 @@
     <meta name="theme-color" content="#000">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="font.css">
     <link rel="shortcut icon" href="images/favicon_black.png">
 </head>
 <body>
 
-<h1>
-    English - ECHO Translations
-</h1>
-
 <section class="make-center">
     <p style="margin: 0; padding: 0; padding-bottom: 20px;">
     <div class="make-center">
-        <input type="hidden" id="broadcast-id" value="source" autocorrect=off autocapitalize=off size=20>
-        <span id="open-or-join" class="icon-play3 translation-icon"></span>
-        <span id="mute" class="icon-volume-mute2 translation-icon"></span>
-        <span id="unmute" class="icon-volume-high translation-icon"></span>
+        <input type="text" id="broadcast-id" value="echo-gdansk-en" autocorrect=off autocapitalize=off size=20>
+        <button id="open-or-join">Play translation</button>
+
         <div class="make-center" id="broadcast-viewers-counter"></div>
     </p>
 
-    <video id="video-preview" loop></video>
+    <audio id="audio-preview" controls loop></audio>
 </section>
+
 
 <script src="RTCMultiConnection.js"></script>
 <script src="/webrtc-adapter.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-
-    // recording is disabled because it is resulting for browser-crash
-    // if you enable below line, please also uncomment above "RecordRTC.js"
-    var enableRecordings = false;
     var connection = new RTCMultiConnection();
+
     // its mandatory in v3
     connection.enableScalableBroadcast = true;
+
     // each relaying-user should serve only 1 users
     connection.maxRelayLimitPerUser = 3;
+
     // we don't need to keep room-opened
     // scalable-broadcast.js will handle stuff itself.
     connection.autoCloseEntireSession = true;
+
     // by default, socket.io server is assumed to be deployed on your own URL
     connection.socketURL = '/';
+
     // comment-out below line if you do not have your own socket.io server
-    // connection.socketURL = 'https://rtcmulticonnection.herokuapp.com:443/';
-    connection.socketMessageEvent = 'scalable-media-broadcast-demo';
+    //connection.socketURL = 'https://rtcmulticonnection.herokuapp.com:443/';
+
+    connection.socketMessageEvent = 'echo-gdansk-translations-english';
+
     // document.getElementById('broadcast-id').value = connection.userid;
+
+    let audioConfig = {
+        mandatory: {},
+        optional: [{
+            echoCancellation: false
+        }]
+    };
+    connection.codecs = {
+        audio: 'opus'
+    };
+    connection.bandwidth = {
+        audio: 128
+    };
+    connection.mediaConstraints = {
+        audio: audioConfig
+    };
+    connection.autoCreateMediaElement = false
     // user need to connect server, so that others can reach him.
     connection.connectSocket(function (socket) {
+
         // this event is emitted when a broadcast is already created.
         socket.on('join-broadcaster', function (hintsToJoinBroadcast) {
             console.log('join-broadcaster', hintsToJoinBroadcast);
+
             connection.session = hintsToJoinBroadcast.typeOfStreams;
             connection.sdpConstraints.mandatory = {
                 OfferToReceiveVideo: !!connection.session.video,
@@ -63,14 +80,17 @@
             connection.broadcastId = hintsToJoinBroadcast.broadcastId;
             connection.join(hintsToJoinBroadcast.userid);
         });
+
         socket.on('rejoin-broadcast', function (broadcastId) {
             console.log('rejoin-broadcast', broadcastId);
+
             connection.attachStreams = [];
             socket.emit('check-broadcast-presence', broadcastId, function (isBroadcastExists) {
                 if (!isBroadcastExists) {
                     // the first person (i.e. real-broadcaster) MUST set his user-id
                     connection.userid = broadcastId;
                 }
+
                 socket.emit('join-broadcast', {
                     broadcastId: broadcastId,
                     userid: connection.userid,
@@ -78,6 +98,7 @@
                 });
             });
         });
+
         socket.on('broadcast-stopped', function (broadcastId) {
             // alert('Broadcast has been stopped.');
             // location.reload();
@@ -85,23 +106,46 @@
             alert('This broadcast has been stopped.');
         });
 
+        // this event is emitted when a broadcast is absent.
+        socket.on('start-broadcasting', function (typeOfStreams) {
+            console.log('start-broadcasting', typeOfStreams);
+
+            // host i.e. sender should always use this!
+            connection.sdpConstraints.mandatory = {
+                OfferToReceiveVideo: false,
+                OfferToReceiveAudio: false
+            };
+            connection.session = typeOfStreams;
+
+            // "open" method here will capture media-stream
+            // we can skip this function always; it is totally optional here.
+            // we can use "connection.getUserMediaHandler" instead
+            connection.open(connection.userid);
+        });
     });
+
     window.onbeforeunload = function () {
+        // Firefox is ugly.
         document.getElementById('open-or-join').disabled = false;
     };
 
-    var videoPreview = document.getElementById('video-preview');
+    var audioPreview = document.getElementById('audio-preview');
+
     connection.onstream = function (event) {
         if (connection.isInitiator && event.type !== 'local') {
             return;
         }
+
         connection.isUpperUserLeft = false;
-        videoPreview.srcObject = event.stream;
-        videoPreview.play();
-        videoPreview.userid = event.userid;
+        audioPreview.srcObject = event.stream;
+        audioPreview.play();
+
+        audioPreview.userid = event.userid;
+
         if (event.type === 'local') {
-            videoPreview.muted = true;
+            audioPreview.muted = true;
         }
+
         if (connection.isInitiator == false && event.type === 'remote') {
             // he is merely relaying the media
             connection.dontCaptureUserMedia = true;
@@ -110,8 +154,10 @@
                 OfferToReceiveAudio: false,
                 OfferToReceiveVideo: false
             };
+
             connection.getSocket(function (socket) {
                 socket.emit('can-relay-broadcast');
+
                 if (connection.DetectRTC.browser.name === 'Chrome') {
                     connection.getAllParticipants().forEach(function (p) {
                         if (p + '' != event.userid + '') {
@@ -128,6 +174,7 @@
                         }
                     });
                 }
+
                 if (connection.DetectRTC.browser.name === 'Firefox') {
                     // Firefox is NOT supporting removeStream method
                     // that's why using alternative hack.
@@ -139,6 +186,7 @@
                         }
                     });
                 }
+
                 // Firefox seems UN_ABLE to record remote MediaStream
                 // WebAudio solution merely records audio
                 // so recording is skipped for Firefox.
@@ -147,61 +195,34 @@
                 }
             });
         }
+
         // to keep room-id in cache
         localStorage.setItem(connection.socketMessageEvent, connection.sessionid);
-    };
-
-    let audioConfig = {
-        mandatory: {},
-        optional: [{
-            echoCancellation: false
-        }]
-    };
-    connection.codecs = {
-        audio: 'opus'
-    };
-    connection.bandwidth = {
-        audio: 320
-    };
-    connection.mediaConstraints = {
-        audio: audioConfig
     };
 
     // ask node.js server to look for a broadcast
     // if broadcast is available, simply join it. i.e. "join-broadcaster" event should be emitted.
     // if broadcast is absent, simply create it. i.e. "start-broadcasting" event should be fired.
-    document.getElementById('mute').style.visibility = 'hidden';
-    document.getElementById('unmute').style.visibility = 'hidden';
-    document.getElementById('mute').onclick = function () {
-        let streamByUserId = connection.streamEvents.selectFirst({userid: 'source'}).stream;
-        streamByUserId.mute();
-        document.getElementById('mute').style.visibility = 'hidden';
-        document.getElementById('unmute').style.visibility = 'visible';
-    }
-    document.getElementById('unmute').onclick = function () {
-        let streamByUserId = connection.streamEvents.selectFirst({userid: 'source'}).stream;
-        streamByUserId.unmute();
-        document.getElementById('mute').style.visibility = 'visible';
-        document.getElementById('unmute').style.visibility = 'hidden';
-    }
     document.getElementById('open-or-join').onclick = function () {
-        document.getElementById('open-or-join').style.visibility = 'hidden';
-        document.getElementById('mute').style.visibility = 'visible';
         var broadcastId = document.getElementById('broadcast-id').value;
         if (broadcastId.replace(/^\s+|\s+$/g, '').length <= 0) {
             alert('Please enter broadcast-id');
             document.getElementById('broadcast-id').focus();
             return;
         }
+
         document.getElementById('open-or-join').disabled = true;
+
         connection.extra.broadcastId = broadcastId;
+
         connection.session = {
             audio: true,
-            video: false,
             oneway: true
         };
+
         connection.getSocket(function (socket) {
             socket.emit('check-broadcast-presence', broadcastId, function (isBroadcastExists) {
+                console.log('check-broadcast-presence', broadcastId, isBroadcastExists);
 
                 socket.emit('join-broadcast', {
                     broadcastId: broadcastId,
@@ -211,7 +232,39 @@
             });
         });
     };
+
     connection.onstreamended = function () {
+    };
+
+    connection.onleave = function (event) {
+        if (event.userid !== audioPreview.userid) return;
+
+        connection.getSocket(function (socket) {
+            socket.emit('can-not-relay-broadcast');
+            connection.isUpperUserLeft = true;
+
+            if (allRecordedBlobs.length) {
+                // playing lats recorded blob
+                var lastBlob = allRecordedBlobs[allRecordedBlobs.length - 1];
+                audioPreview.src = URL.createObjectURL(lastBlob);
+                audioPreview.play();
+                allRecordedBlobs = [];
+            } else if (connection.currentRecorder) {
+                var recorder = connection.currentRecorder;
+                connection.currentRecorder = null;
+                recorder.stopRecording(function () {
+                    if (!connection.isUpperUserLeft) return;
+
+                    audioPreview.src = URL.createObjectURL(recorder.getBlob());
+                    audioPreview.play();
+                });
+            }
+
+            if (connection.currentRecorder) {
+                connection.currentRecorder.stopRecording();
+                connection.currentRecorder = null;
+            }
+        });
     };
 
     function disableInputButtons() {
@@ -219,6 +272,29 @@
         document.getElementById('broadcast-id').disabled = true;
     }
 
+    // ......................................................
+    // ......................Handling broadcast-id................
+    // ......................................................
+
+    var broadcastId = '';
+    if (localStorage.getItem(connection.socketMessageEvent)) {
+        broadcastId = localStorage.getItem(connection.socketMessageEvent);
+    } else {
+        broadcastId = connection.token();
+    }
+    var txtBroadcastId = document.getElementById('broadcast-id');
+    txtBroadcastId.value = broadcastId;
+    txtBroadcastId.onkeyup = txtBroadcastId.oninput = txtBroadcastId.onpaste = function () {
+        localStorage.setItem(connection.socketMessageEvent, this.value);
+    };
+
+    // below section detects how many users are viewing your broadcast
+
+    connection.onNumberOfBroadcastViewersUpdated = function (event) {
+        if (!connection.isInitiator) return;
+
+        document.getElementById('broadcast-viewers-counter').innerHTML = 'Listeners: <b>' + event.numberOfBroadcastViewers + '</b>';
+    };
 </script>
 </body>
 </html>

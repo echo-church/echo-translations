@@ -7,10 +7,6 @@ body {
     background-color: #000;
     color: #fff;
     font-family: 'Lato', sans-serif;
-    background-image: url("images/favicon_black.png");
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: contain;
 }
 
 #videos-container {
@@ -38,4 +34,13 @@ body {
     text-transform: uppercase;
     font-size: 20px;
     padding: 10px;
+}
+
+#mute, #unmute {
+    visibility: hidden;
+}
+
+.translation-icon {
+    cursor: pointer;
+    font-size: 64px;
 }
