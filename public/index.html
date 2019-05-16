@@ -31,6 +31,19 @@
 <script src="RTCMultiConnection.js"></script>
 <script src="/webrtc-adapter.js"></script>
 <script src="/socket.io/socket.io.js"></script>
+<script src="./NoSleep.min.js"></script>
+<script>
+    var noSleep = new NoSleep();
+
+    function enableNoSleep() {
+        noSleep.enable();
+        document.removeEventListener('touchstart', enableNoSleep, false);
+    }
+
+    // Enable wake lock.
+    // (must be wrapped in a user input event handler e.g. a mouse or touch handler)
+    document.addEventListener('touchstart', enableNoSleep, false)
+</script>
 <script>
 
     // recording is disabled because it is resulting for browser-crash
