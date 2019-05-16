@@ -288,6 +288,7 @@
         broadcastId = localStorage.getItem(connection.socketMessageEvent);
     } else {
         broadcastId = connection.token();
+        alert(broadcastId);
     }
     var txtBroadcastId = document.getElementById('broadcast-id');
     txtBroadcastId.value = broadcastId;
