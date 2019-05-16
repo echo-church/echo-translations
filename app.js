@@ -31,8 +31,8 @@ app.get('/t', function (req, res) {
     res.sendFile(path.join(__dirname + '/public/translator.html'));
 });
 
-app.get('/p', function (req, res) {
-    res.sendFile(path.join(__dirname + '/public/p.html'));
+app.get('/pl', function (req, res) {
+    res.sendFile(path.join(__dirname + '/public/pl.html'));
 });
 
 
