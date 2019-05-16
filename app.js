@@ -23,11 +23,11 @@ ioServer(httpApp).on('connection', function (socket) {
 app.use(express.static(__dirname + '/public')); // Set the static files location
 console.log("App listening on port 9002");
 
-app.get('/source-777-190310', function (req, res) {
+app.get('/s', function (req, res) {
     res.sendFile(path.join(__dirname + '/public/source.html'));
 });
 
-app.get('/translator-190310-7', function (req, res) {
+app.get('/t', function (req, res) {
     res.sendFile(path.join(__dirname + '/public/translator.html'));
 });
 
