@@ -17,7 +17,7 @@
 <section class="make-center">
     <p style="margin: 0; padding: 0; padding-bottom: 20px;">
     <div class="make-center">
-        <input type="text" id="broadcast-id" value="source-echo-pl" autocorrect=off autocapitalize=off size=20>
+        <input type="hidden" id="broadcast-id" value="source-echo-pl" autocorrect=off autocapitalize=off size=20>
         <button id="open-or-join">Open or Join Broadcast</button>
         <button id="mute">Mute</button>
         <button id="unmute">Unmute</button>
@@ -186,11 +186,11 @@
     // if broadcast is available, simply join it. i.e. "join-broadcaster" event should be emitted.
     // if broadcast is absent, simply create it. i.e. "start-broadcasting" event should be fired.
     document.getElementById('mute').onclick = function () {
-        let streamByUserId = connection.streamEvents.selectFirst({ userid: 'source' }).stream;
+        let streamByUserId = connection.streamEvents.selectFirst({userid: 'source'}).stream;
         streamByUserId.mute();
     }
     document.getElementById('unmute').onclick = function () {
-        let streamByUserId = connection.streamEvents.selectFirst({ userid: 'source' }).stream;
+        let streamByUserId = connection.streamEvents.selectFirst({userid: 'source'}).stream;
         streamByUserId.unmute();
     }
     document.getElementById('open-or-join').onclick = function () {
@@ -280,21 +280,6 @@
         document.getElementById('broadcast-id').disabled = true;
     }
 
-    // ......................................................
-    // ......................Handling broadcast-id................
-    // ......................................................
-    var broadcastId = '';
-    if (localStorage.getItem(connection.socketMessageEvent)) {
-        broadcastId = localStorage.getItem(connection.socketMessageEvent);
-    } else {
-        broadcastId = connection.token();
-        alert(broadcastId);
-    }
-    var txtBroadcastId = document.getElementById('broadcast-id');
-    txtBroadcastId.value = broadcastId;
-    txtBroadcastId.onkeyup = txtBroadcastId.oninput = txtBroadcastId.onpaste = function () {
-        localStorage.setItem(connection.socketMessageEvent, this.value);
-    };
     // below section detects how many users are viewing your broadcast
     connection.onNumberOfBroadcastViewersUpdated = function (event) {
         if (!connection.isInitiator) return;
